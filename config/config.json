@@ -1,0 +1,10 @@
+{
+  "development": {
+    "username": "root",
+    "password": "root",
+    "database": "oauth_passport",
+    "host": "localhost",
+    "port": 33601,
+    "dialect": "mysql"
+  }
+}
