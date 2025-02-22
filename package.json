@@ -20,8 +20,7 @@
     "redis"
   ],
   "author": "Rahul Bagchi",
-  "license": "ISC",
-  "description": "",
+  "description": "node express authentication with email verification",
   "dependencies": {
     "@aws-sdk/client-ses": "^3.744.0",
     "bcrypt": "^5.1.1",
