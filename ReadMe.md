@@ -8,8 +8,6 @@ This project provides a robust and secure authentication system for your Node.js
 * [Tech Stack](#tech-stack)
 * [Installation](#installation)
 * [API Endpoints](#api-endpoints)
-* [Contributing](#contributing)
-* [License](#license)
 
 
 ## Features <a name="features"></a>
@@ -31,9 +29,9 @@ This project provides a robust and secure authentication system for your Node.js
     * Long-lived refresh tokens (7 days) for seamless token renewal.
     * Access tokens are sent via the `Authorization` header (Bearer token).
 * **Security:**
-    * Protection against common vulnerabilities. (Mention specific protections if implemented, e.g., rate limiting, input validation)
+    * Protection against common vulnerabilities.
 * **Scalability:**
-    * Designed for scalability using Redis for caching. (Explain what you're caching)
+    * Designed for scalability using Redis for caching.
 
 [Go to Table of Contents](#table-of-contents)
 
@@ -63,91 +61,88 @@ This project provides a robust and secure authentication system for your Node.js
 
 1. **Clone the Repository:**
 
-```bash
-git clone https://github.com/rahulstech/node-authentication-with-email-verification.git
+    ```bash
+    git clone https://github.com/rahulstech/node-authentication-with-email-verification.git
 
-cd node-authentication-with-email-verification
-````
+    cd node-authentication-with-email-verification
+    ````
 
-2.  **Environment Variables:**
+2. **Environment Variables:**
 
-      * Copy `.env-copy` to `.env`.
-      * Fill in the required credentials:
-          * Google OAuth Client ID and Secret
-          * AWS SES credentials (IAM user with SES permissions)
-          * Redis host and port (defaults are usually fine)
+    * Copy `.env-copy` to `.env`.
+    * Fill in the required credentials:
+        * Google OAuth Client ID and Secret
+        * AWS SES credentials (IAM user with SES permissions)
+        * Redis host and port (defaults are usually fine)
 
-    <!-- end list -->
-
-    ```
-    # Example .env file
-    GOOGLE_CLIENT_ID=your_google_client_id
-    GOOGLE_CLIENT_SECRET=your_google_client_secret
-    AMAZON_ID=your_aws_iam_id
-    AMAZON_SECRET=your_aws_iam_secret
-    AMAZON_REGION=your_aws_region
-    EMAIL_VERIFICATION_SENDER=your_verified_ses_email
-    REDIS_HOST=localhost
-    REDIS_PORT=6379
-    ```
+            ```
+            # Example .env file
+            GOOGLE_CLIENT_ID=your_google_client_id
+            GOOGLE_CLIENT_SECRET=your_google_client_secret
+            AMAZON_ID=your_aws_iam_id
+            AMAZON_SECRET=your_aws_iam_secret
+            AMAZON_REGION=your_aws_region
+            EMAIL_VERIFICATION_SENDER=your_verified_ses_email
+            REDIS_HOST=localhost
+            REDIS_PORT=6379
+            ```
 
 3.  **JWT Keys:**
 
     * Generate RSA key pair for JWT signing (using OpenSSL):
 
-    <!-- end list -->
-
-    ```bash
-    openssl genpkey -algorithm RSA -out jwt_private.pem -pgenopt rsa:key_gen_bits:4096
-    openssl rsa -in jwt_private.pem -pubout -out jwt_public.pem
-    ```
+        ```bash
+        openssl genpkey -algorithm RSA -out jwt_private.pem -pgenopt rsa:key_gen_bits:4096
+        openssl rsa -in jwt_private.pem -pubout -out jwt_public.pem
+        ```
 
     * Place `jwt_private.pem` and `jwt_public.pem` in the `secrets` directory.  *(Create the `secrets` directory if it doesn't exist.)*
 
-4.  **Database Setup:**
 
-      * Configure MySQL connection in `config/config.json`.
-      * Create the database and run migrations:
-
-    <!-- end list -->
+4.  **Install Dependencies:**
 
     ```bash
-    npx sequelize-cli db:create
-    npx sequelize-cli db:migrate
+    npm install
     ```
 
-5.  **Install Dependencies:**
+5.  **Database Setup:**
 
-<!-- end list -->
+    * Configure MySQL connection in `config/config.json`.
+    * Create the database and run migrations:
 
-```bash
-npm install
-```
+        ```bash
+        npx sequelize-cli db:create
+        npx sequelize-cli db:migrate
+        ```
+
 
 6.  **Run the Server:**
 
-<!-- end list -->
+    ```bash
+    npm run dev  # (or npm start if you have that script defined)
+    ```
 
-```bash
-npm run dev  # (or npm start if you have that script defined)
-```
-
-
-* The server will typically start on port 5000 (configurable in `.env`).
+    The server will typically start on port 5000 (configurable in `.env`).
 
 
-[Go to Table of Contents](https://www.google.com/url?sa=E&source=gmail&q=#table-of-contents)
+[Go to Table of Contents](#table-of-contents)
 
 ## API Endpoints <a name="api-endpoints"></a>
 
-*(Provide a few key API endpoint examples with request methods, URLs, request bodies (if needed), and response examples.  This is crucial for developers wanting to use your API.)*
-
 ```
-POST /auth/register - Register a new user
-POST /auth/login - Login a user
-GET /auth/verify/:token - Verify email
-POST /auth/resend-verification - Resend verification email
-# ... (add more endpoints)
+POST /register - Register a new user
+POST /login - Login a user with email and password
+GET /login/google - Login via google
+GEt /google/callback - Web hook used by google oauth server on authenticated
+GET /dashboard - 
+POST /refresh - Generates new access token based on sent refresh token in request body
+GET /verify/email/link - Send a new email verification link to registered email, requires login
+GET /verify/email - Verify email
+PATCH /email/new - Change email, requires login
+POST /password/reset/link - Generate the password reset link
+PATCH /password/reset - Reset password if forget
+PATCH /password/new - Change password, requires log in
+GET /logout - Log out, requires login
 ```
 
-[Go to Table of Contents](https://www.google.com/url?sa=E&source=gmail&q=#table-of-contents)
+[Go to Table of Contents](#table-of-contents)
