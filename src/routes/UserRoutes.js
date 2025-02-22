@@ -1,9 +1,17 @@
 const express = require('express');
 const { Router } = express;
 const { catchErrorAsync } = require('../utils/errors');
-const { postLogin, authenticateEmailPassword, authenticateToken, authenticateGoogleLogin, issueNewAccessToken } = require('../middlewares/Auth');
-const { registerUser, verifyEmail, sendNewVerificationEmail, logout } = require('../controllers/UserController');
-const { registerUserRule, loginUserRule, verifyEmailRule } = require('../middlewares/UserValidationRules');
+const { postLogin, authenticateEmailPassword, authenticateToken, 
+        authenticateGoogleLogin, issueNewAccessToken, 
+        sendPasswordResetLinkEmail,
+        resetPassword, updatePassword } = require('../controllers/AuthenticationController');
+const { registerUser, verifyEmail, 
+        logout, updateEmail, 
+        sendVerificationEmail} = require('../controllers/UserController');
+const { registerUserRule, loginUserRule, verifyEmailRule, updateEmailRule,
+        updatePasswordRule, 
+        passwordResetLinkRule,
+        passwordResetRule} = require('../middlewares/UserValidationRules');
 const { validate } = require('../middlewares/Validation');
 
 const routes = Router();
@@ -42,8 +50,9 @@ routes.get('/verify/email',
     catchErrorAsync(verifyEmail)
 );
 
-routes.get('/logout',
-    catchErrorAsync(logout)
+routes.post('/password/reset/link', 
+    catchErrorAsync(validate(passwordResetLinkRule.schema, passwordResetLinkRule.fields)),
+    catchErrorAsync(sendPasswordResetLinkEmail)
 );
 
 const protectedRoutes = Router();
@@ -54,12 +63,36 @@ protectedRoutes.get('/dashboard', (req, res) => {
     res.send(`hello user ${req.user.id}`);
 });
 
+// regenerate a new access token. refersh token must be sent in body with _refreshToken
 protectedRoutes.post('/refresh', 
     catchErrorAsync(issueNewAccessToken)
 );
 
-protectedRoutes.get('/verify/email/new', 
-    catchErrorAsync(sendNewVerificationEmail)
+// send a new verification email
+protectedRoutes.get('/verify/email/link', 
+    catchErrorAsync(sendVerificationEmail)
+);
+
+// change email
+protectedRoutes.patch('/email/new', 
+    catchErrorAsync(validate(updateEmailRule.schema,updateEmailRule.fields)),
+    catchErrorAsync(updateEmail)
+);
+
+// change password, requires existing password and new password
+protectedRoutes.patch('/password/new',
+    catchErrorAsync(validate(updatePasswordRule.schema, updatePasswordRule.fields)),
+    catchErrorAsync(updatePassword)
+);
+
+// reset password, requires new password and confirmation password
+protectedRoutes.patch('/password/reset', 
+    catchErrorAsync(validate(passwordResetRule.schema,passwordResetRule.fields)),
+    catchErrorAsync(resetPassword)
+)
+
+protectedRoutes.get('/logout', 
+    catchErrorAsync(logout)
 );
 
 routes.use(protectedRoutes);

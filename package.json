@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "oauth": "node --env-file-if-exists=.env --watch src/"
+    "dev": "node --env-file-if-exists=.env --watch src/"
   },
   "keywords": [
     "node",

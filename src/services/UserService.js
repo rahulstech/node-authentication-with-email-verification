@@ -51,6 +51,16 @@ async function setEmailVerified(userId, verified) {
     return user.toJSON();
 }
 
+async function setEmail(id, email) {
+    const [count] = await User.update({ email, verified: false }, { where: { id }});
+    return count === 1;
+}
+
+async function setPassword(id, password) {
+    await User.update({ password }, { where: { id }});
+}
+
 module.exports = {
     createUser, getUserByEmail, saveRefreshToken, isRefreshTokenValid, getUserById, setEmailVerified,
+    setEmail, setPassword, 
 }

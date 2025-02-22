@@ -1,8 +1,8 @@
-const { getUserByEmail, createUser, setEmailVerified, getUserById } = require('../services/UserService');
+const { getUserByEmail, createUser, setEmailVerified, getUserById, setEmail, setPassword, saveRefreshToken } = require('../services/UserService');
 const { save, get, setHash } = require('../services/CacheService');
 const { sendEmail } = require('../services/EmailService');
 const { ApiError } = require('../utils/errors');
-const { hashPassword } = require('../utils/helpers');
+const { hashPassword, verifyPassword } = require('../utils/helpers');
 const crypto = require('node:crypto');
 
 async function registerUser(req, res) {
@@ -23,13 +23,13 @@ async function registerUser(req, res) {
     const user = await createUser(values);
 
     // send verification email
-    await sendVerificationEmail(user)
+    await sendEmailForEmailVerification(user)
     
     // redirect to login
     res.status(201).json({ data: user });
 }
 
-async function sendVerificationEmail({ id, displayName, email }) {
+async function sendEmailForEmailVerification({ id, email }) {
     const verificationCode = crypto.randomBytes(32).toString('base64url')
 
     // cache the verification code for 15 minutes
@@ -37,11 +37,15 @@ async function sendVerificationEmail({ id, displayName, email }) {
     // because it's expiration is set so it will be remove automactically
     // also setting new value before expiration of old value resets the expiration
     // thus i saved an execution just avoiding deletion
-    await save(`user:${id}:verify:email`, verificationCode, 15 * 60);
+    await save(`user:${id}:verify:email`, verificationCode, 900);
 
     // send verification code via email
-    await sendEmail(email, `Verify Email`, `Welcome ${displayName}.\nPlease click the link to verify your email
-        http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/verify/email?code=${verificationCode}&uid=${id}\n
+    const url = new URL('/verify/email',`http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`);
+    url.searchParams.append('code',verificationCode);
+    url.searchParams.append('uid',id);
+    const emailVerificationLink = url.href;
+
+    await sendEmail(email, `Verify Email`, `Please click the link to verify your email${emailVerificationLink}\n
         This link is valid for 15 minutes.`);
 }
 
@@ -72,19 +76,59 @@ async function verifyEmail(req, res) {
     res.status(200).json({ message: 'email verified'});
 }
 
-async function sendNewVerificationEmail(req,res) {
+async function sendVerificationEmail(req,res) {
     const { id } = req.user;
     const user = await getUserById(id);
     if (null === user) {
         throw new ApiError(404, `user not found`);
     }
 
-    await sendVerificationEmail(user);
+    // if user is already verified then no need to send verification email
+    if (user.verified) {
+        return res.json({ message: "email already verified" });
+    }
+
+    await sendEmailForEmailVerification(user);
     res.json({ message: 'verification email sent'});
 }
 
+async function updateEmail(req,res) {
+    const { id } = req.user;
+    const { newEmail, password } = req.body;
+
+    // check email already exists
+    const anotherUser = await getUserByEmail(newEmail);
+    if (null !== anotherUser) {
+        if (anotherUser.id === id) {
+            return res.json({ message: "old email and new email are same" });
+        }
+        else {
+            throw new ApiError(403, "email already taken");
+        }
+    }
+
+    const user = await getUserById(id);
+
+    // verify password
+    const matched = await verifyPassword(password, user.password);
+    if (!matched) {
+        throw new ApiError(401, "incorrect password");
+    }
+
+    // update email in db
+    const changed = await setEmail(id, newEmail);
+    if (!changed) {
+        throw new ApiError(500, "email not saved");
+    }
+
+    // send verification email
+    await sendEmailForEmailVerification(user);
+
+    res.json({ message: "email changed" });
+}
+
 async function logout(req, res) {
-    const { id } = req.user || {}
+    const { id } = req.user
     if (id) {
         await saveRefreshToken(id, null);
     }
@@ -93,5 +137,5 @@ async function logout(req, res) {
 }
 
 module.exports = { 
-    registerUser, verifyEmail, sendNewVerificationEmail, logout,
+    registerUser, verifyEmail, sendVerificationEmail, logout, updateEmail,
 }

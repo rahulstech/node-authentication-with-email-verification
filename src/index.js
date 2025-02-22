@@ -16,20 +16,11 @@ process.on('SIGINT', async () => {
 
 // connect and start server
 
-new Promise( async (resolve, reject) => {
-    try {
-        await cacheClient.connect();
-        console.log('redis connected successfully');
-        
-        await sequelize.authenticate();
-        console.log('db connected successfully');
+const cacheService = cacheClient. connect().then(() => console.log("cache service connected"));
 
-        resolve();
-    }
-    catch(err) {
-        reject(err);
-    }
-})
+const dbService = sequelize.authenticate().then(() => console.log("db service connected"));
+
+Promise.all([cacheService, dbService])
 .then(() => {
     server.listen(process.env.SERVER_PORT, process.env.SERVER_HOST, () => 
         console.log(`server started http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`));

@@ -88,19 +88,22 @@ const JWT_ALGORITHM = process.env.JWT_ALGORITHM;
  *                                 '2y': two years
  * @returns {string} generated jwt
  */
-function createToken(user, expiry = null) {
+function createToken(user, expiry = null, notBefore = null) {
     const { id } = user;
     const payload = { id };
 
     // prepare options
     const options = { algorithm: JWT_ALGORITHM };
-    if (typeof expiry === 'string') {
-        options.expiresIn = expiry
+    if (typeof expiry === 'string' && expiry !== '') {
+        options.expiresIn = expiry;
+    }
+    if (typeof notBefore === 'string' && notBefore !== '') {
+        options.notBefore = notBefore;
     }
     
     // generate token and return
-    const token = jwt.sign( payload, JWT_PRIVATE_KEY, options)
-    return token
+    const token = jwt.sign( payload, JWT_PRIVATE_KEY, options);
+    return token;
 }
 
 // install jwt strate for extracting token from request
@@ -110,6 +113,7 @@ function installJwtStrategy(passport) {
         jwtFromRequest: ExtractJwt.fromExtractors([
                 ExtractJwt.fromAuthHeaderAsBearerToken(), // access tokens are send as bearer in Authorization header
                 ExtractJwt.fromBodyField('_refreshToken'), // refresh token is send in post request body
+                ExtractJwt.fromUrlQueryParameter('Reset-Token'), // password reset token in query parameter
             ]),
         secretOrKey: JWT_PRIVATE_KEY,
         ignoreExpiration: false,
