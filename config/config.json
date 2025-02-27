@@ -2,9 +2,15 @@
   "development": {
     "username": "root",
     "password": "root",
-    "database": "oauth_passport",
+    "database": "db_node_authentication_with_email_verification",
     "host": "localhost",
     "port": 33601,
     "dialect": "mysql"
+  },
+
+  "production": {
+    "use_env_variable": "DB_URL",
+    "dialect": "mysql",
+    "database": "db_node_authentication_with_email_verification"
   }
 }

@@ -1,0 +1,37 @@
+networks:
+        node-auth-net:
+
+services:
+        node-auth-mysql:
+                container_name: node-auth-mysql
+                build: ./docker-mysql/
+                networks:
+                        - node-auth-net
+                healthcheck:
+                        test: ["CMD-SHELL","mysqladmin ping -h localhost"]
+                        timeout: 10s # process must successfully exit within 10 seconds 
+                        retries: 6  # try atmost 6 times
+                        interval: 15s # try after 15 seconds
+        node-auth-redis:
+                container_name: node-auth-redis
+                image: redis:7
+                networks:
+                        - node-auth-net
+                healthcheck:
+                        test: ["CMD-SHELL","redis-cli ping"]
+                        timeout: 5s
+                        retries: 5
+                        interval: 5s
+        node-auth-app:
+                container_name: node-auth-app
+                build: .
+                networks:
+                        - node-auth-net
+                depends_on:
+                        node-auth-mysql:
+                                condition: service_healthy
+                        node-auth-redis:
+                                condition: service_healthy
+                ports:
+                        - "5000:5000"
+

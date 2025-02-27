@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "node --env-file-if-exists=.env --watch src/"
+    "dev": "node --env-file-if-exists=.env-dev --watch src/",
+    "start": "node --env-file-if-exists=.env --watch src/"
   },
   "keywords": [
     "node",

@@ -1,0 +1,12 @@
+docker-compose.yml
+Dockerfile
+.dockerignore
+.env
+.env-dev
+.git
+.gitignore
+ReadMe.md
+
+docker-mysql/
+node_modules/
+
