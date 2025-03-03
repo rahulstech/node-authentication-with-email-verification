@@ -4,18 +4,14 @@ WORKDIR /www
 
 COPY . .
 
-RUN mv .env-prod .env
-
 ENV NODE_ENV=production
 
 EXPOSE 5000
 
 RUN npm install
 
-RUN mv docker-entrypoint-nodeapp.sh /docker-entrypoint-nodeapp.sh
-RUN chmod +x /docker-entrypoint-nodeapp.sh
+RUN chmod +x entrypoint.sh
 
-ENTRYPOINT ["/docker-entrypoint-nodeapp.sh"]
+ENTRYPOINT [ "/www/entrypoint.sh" ]
 
 CMD ["npm", "start"]
-

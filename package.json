@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "node --env-file-if-exists=.env-dev --watch src/",
-    "start": "node --env-file-if-exists=.env --watch src/"
+    "start": "node --env-file=.env-prod src/"
   },
   "keywords": [
     "node",
@@ -18,7 +18,10 @@
     "passport",
     "email verification",
     "aws ses",
-    "redis"
+    "redis",
+    "bcrypt",
+    "docker",
+    "docker-compose"
   ],
   "author": "Rahul Bagchi",
   "description": "node express authentication with email verification",

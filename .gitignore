@@ -1,4 +1,6 @@
 */*.pem
-.env
+.env-dev
+.env-prod
 package-lock.json
+teardown.sh
 node_modules/

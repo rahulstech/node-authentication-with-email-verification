@@ -4,13 +4,16 @@
     "password": "root",
     "database": "db_node_authentication_with_email_verification",
     "host": "localhost",
-    "port": 33601,
+    "port": 3306,
     "dialect": "mysql"
   },
 
   "production": {
-    "use_env_variable": "DB_URL",
-    "dialect": "mysql",
-    "database": "db_node_authentication_with_email_verification"
+    "username": "root",
+    "password": "root",
+    "database": "db_node_authentication_with_email_verification",
+    "host": "node-auth-mysql",
+    "port": 3306,
+    "dialect": "mysql"
   }
 }

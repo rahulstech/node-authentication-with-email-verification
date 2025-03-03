@@ -7,6 +7,8 @@ This project provides a robust and secure authentication system for your Node.js
 * [Features](#features)
 * [Tech Stack](#tech-stack)
 * [Installation](#installation)
+    - [Development](#developmen-installation)
+    - [Production](#production-installation)
 * [API Endpoints](#api-endpoints)
 
 
@@ -69,7 +71,7 @@ This project provides a robust and secure authentication system for your Node.js
 
 2. **Environment Variables:**
 
-    * Copy `.env-copy` to `.env`.
+    * Copy `example.env-dev` to `.env-dev` and `example.env-prod` to `.env-prod`
     * Fill in the required credentials:
         * Google OAuth Client ID and Secret
         * AWS SES credentials (IAM user with SES permissions)
@@ -99,33 +101,47 @@ This project provides a robust and secure authentication system for your Node.js
     * Place `jwt_private.pem` and `jwt_public.pem` in the `secrets` directory.  *(Create the `secrets` directory if it doesn't exist.)*
 
 
-4.  **Install Dependencies:**
-
-    ```bash
-    npm install
-    ```
-
-5.  **Database Setup:**
-
-    * Configure MySQL connection in `config/config.json`.
-    * Create the database and run migrations:
+    **Development** <a name="development-installation"></a>
+    
+    4.  **Install Dependencies:**
 
         ```bash
-        npx sequelize-cli db:create
-        npx sequelize-cli db:migrate
+        npm install
         ```
 
+    5.  **Database Setup:**
 
-6.  **Run the Server:**
+        * Configure MySQL connection in `config/config.json`.
+        * Create the database and run migrations:
 
-    ```bash
-    npm run dev  # (or npm start if you have that script defined)
-    ```
+            ```bash
+            npx sequelize-cli db:create
+            npx sequelize-cli db:migrate
+            ```
 
-    The server will typically start on port 5000 (configurable in `.env`).
+
+    6.  **Run the Dev Server:**
+
+        ```bash
+        npm run dev
+        ```
+
+        The server will typically start on port 5000 (configurable in `.env-dev`).
+
+    [Go to Table of Contents](#table-of-contents)
+
+    **Production:** <a name="production-installation"></a>
+
+    4. **Run Docker:**
+        
+        * Run the following command from the project root directory
+
+            ```sh
+            docker-compose up -d # -d will run containers in detached mode. remove -d if you don't want to run in detached mode
+            ```
 
 
-[Go to Table of Contents](#table-of-contents)
+    [Go to Table of Contents](#table-of-contents)
 
 ## API Endpoints <a name="api-endpoints"></a>
 

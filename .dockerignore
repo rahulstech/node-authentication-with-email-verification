@@ -1,10 +1,10 @@
 docker-compose.yml
 Dockerfile
 .dockerignore
-.env
 .env-dev
 .git
 .gitignore
+package-lock.json
 ReadMe.md
 
 docker-mysql/

@@ -45,7 +45,7 @@ async function sendEmailForEmailVerification({ id, email }) {
     url.searchParams.append('uid',id);
     const emailVerificationLink = url.href;
 
-    await sendEmail(email, `Verify Email`, `Please click the link to verify your email${emailVerificationLink}\n
+    await sendEmail(email, `Verify Email`, `Please click the link to verify your email\n${emailVerificationLink}\n
         This link is valid for 15 minutes.`);
 }
 
