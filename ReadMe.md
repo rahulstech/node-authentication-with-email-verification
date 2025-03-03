@@ -7,12 +7,12 @@ This project provides a robust and secure authentication system for your Node.js
 * [Features](#features)
 * [Tech Stack](#tech-stack)
 * [Installation](#installation)
-    - [Development](#developmen-installation)
-    - [Production](#production-installation)
+    - [Development](#development)
+    - [Production](#production)
 * [API Endpoints](#api-endpoints)
 
 
-## Features <a name="features"></a>
+## Features
 
 * **User Registration:**
     * Email and Password registration with mandatory email verification.
@@ -37,7 +37,7 @@ This project provides a robust and secure authentication system for your Node.js
 
 [Go to Table of Contents](#table-of-contents)
 
-## Tech Stack <a name="tech-stack"></a>
+## Tech Stack
 
 * **Backend:**
     * Node.js
@@ -59,7 +59,7 @@ This project provides a robust and secure authentication system for your Node.js
 
 [Go to Table of Contents](#table-of-contents)
 
-## Installation <a name="installation"></a>
+## Installation 
 
 1. **Clone the Repository:**
 
@@ -101,7 +101,7 @@ This project provides a robust and secure authentication system for your Node.js
     * Place `jwt_private.pem` and `jwt_public.pem` in the `secrets` directory.  *(Create the `secrets` directory if it doesn't exist.)*
 
 
-    **Development** <a name="development-installation"></a>
+    ### Development 
     
     4.  **Install Dependencies:**
 
@@ -130,7 +130,7 @@ This project provides a robust and secure authentication system for your Node.js
 
     [Go to Table of Contents](#table-of-contents)
 
-    **Production:** <a name="production-installation"></a>
+    ### Production
 
     4. **Run Docker:**
         
@@ -143,7 +143,7 @@ This project provides a robust and secure authentication system for your Node.js
 
     [Go to Table of Contents](#table-of-contents)
 
-## API Endpoints <a name="api-endpoints"></a>
+## API Endpoints
 
 ```
 POST /register - Register a new user
