@@ -1,6 +1,6 @@
 const passport = require('passport');
 const { createToken } = require('../services/AuthenticationService');
-const { saveRefreshToken, getUserById, setPassword, getUserByEmail, setEmail } = require('../services/UserService');
+const { saveRefreshToken, getUserById, setPassword, getUserByEmail } = require('../services/UserService');
 const { ApiError } = require('../utils/errors');
 const { sendEmail } = require('../services/EmailService');
 const { hashPassword } = require('../utils/helpers');
@@ -11,10 +11,6 @@ function passportAuthenticate(strategy) {
             if (error) {
                 return next(error);
             }
-            if (!user) {
-                return next(new ApiError(401,info.message));
-            }
-
             req.user = user;
             next();
         })(req,res,next);
@@ -28,27 +24,36 @@ const authenticateEmailPassword = passportAuthenticate('local');
 const authenticateGoogleLogin = passportAuthenticate('google');
 
 async function postLogin(req,res) {
-    const user = req.user;
-    const accessToken = createToken(user, process.env.ACCESS_TOKEN_EXPIRY);
-    const refreshToken = createToken(user, process.env.REFRESH_TOKEN_EXPIRY);
+    const { id } = req.user;
+    const user = await getUserById(id);
+    const accessToken = await createToken(user, process.env.ACCESS_TOKEN_EXPIRY);
+    const refreshToken = await createToken(user, process.env.REFRESH_TOKEN_EXPIRY);
 
-    const saved = await saveRefreshToken(user.id, refreshToken);
+    const saved = await saveRefreshToken(id, refreshToken.token);
     if (!saved) {
         throw new ApiError(500, 'refresh token not saved');
     }
 
-    res.json({ tokens: { accessToken, refreshToken }});
+    res.json({ 
+        tokens: { "access-token": accessToken, "refresh-token": refreshToken },
+        user,
+    });
 }
 
 async function issueNewAccessToken(req, res) {
-    const { id } = req.user ||  {}
+    const { id } = req.user;
 
     // check user has the refresh token
     const user = await getUserById(id)
 
     // if user does not exists in cache means user not logged in
     if (!user) {
-        throw new ApiError(404, 'user not found');
+        throw new ApiError(404, {
+            description: 'user not found',
+            context: {
+                user_id: id
+            },
+        });
     }
 
     // refresh toke is valid, issue a new access token

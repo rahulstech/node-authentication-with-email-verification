@@ -6,6 +6,7 @@ const { Strategy: JwtStrategy, ExtractJwt } = require('passport-jwt');
 const jwt = require('jsonwebtoken');
 const { getUserByEmail, createUser } = require('./UserService');
 const { verifyPassword, pickOnly } = require('../utils/helpers');
+const { ApiError } = require('../utils/errors');
 
 // google oauth credentials
 const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;
@@ -49,15 +50,29 @@ function installLocalStrategy(passport) {
             // find user by email
             const user = await getUserByEmail(email);
             if (null === user) {
-                done(null,false, { message: 'incorrect email' });
-                return;
+                return done(new ApiError(401,{ 
+                    description: 'login failed', 
+                    details: [
+                        {
+                            explain: 'unknow email',
+                            key: 'email'
+                        }
+                    ],
+                }));
             }
 
             // verify password
             const passwordMatched = await verifyPassword(password, user.password);
             if (!passwordMatched) {
-                done(null,false,{ message: 'incorrect password'});
-                return;
+                return done(new ApiError(401,{ 
+                    description: 'login failed', 
+                    details: [
+                        {
+                            explain: 'incorrect password',
+                            key: 'password'
+                        }
+                    ],
+                }));
             }
 
             done(null, user);
@@ -77,6 +92,25 @@ const JWT_PRIVATE_KEY = readFileSync(path.resolve(__dirname, '../..', process.en
 // jwt asymmetric algorithm
 const JWT_ALGORITHM = process.env.JWT_ALGORITHM;
 
+
+function jwtSignAsync(payload, secret, options = null) {
+    return new Promise((resolve, reject)=> {
+        jwt.sign(payload, secret, options, (error, token) => {
+            if (error) {
+                reject(error);
+            }
+            else {
+                const { exp } = jwt.decode(token, { json: true, complete: false });
+                const result = { token };
+                if (exp) {
+                    result.expire = exp;
+                }
+                resolve(result);
+            }
+        });
+    });
+}
+
 /**
  * 
  * @param {object} payload 
@@ -88,7 +122,7 @@ const JWT_ALGORITHM = process.env.JWT_ALGORITHM;
  *                                 '2y': two years
  * @returns {string} generated jwt
  */
-function createToken(user, expiry = null, notBefore = null) {
+async function createToken(user, expiry = null, notBefore = null) {
     const { id } = user;
     const payload = { id };
 
@@ -102,8 +136,9 @@ function createToken(user, expiry = null, notBefore = null) {
     }
     
     // generate token and return
-    const token = jwt.sign( payload, JWT_PRIVATE_KEY, options);
-    return token;
+    const result = await jwtSignAsync( payload, JWT_PRIVATE_KEY, options);
+    
+    return result;
 }
 
 // install jwt strate for extracting token from request

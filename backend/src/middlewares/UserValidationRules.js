@@ -20,7 +20,7 @@ const loginUserRule = {
     schema: {
         body: joi.object().keys({
             email: joi.string().email().required(),
-            password: passwordSchema.required(),
+            password: joi.string().required(),
         })
         .required()
         .unknown(false),
@@ -45,7 +45,7 @@ const verifyEmailRule = {
 const updateEmailRule = {
     schema: {
         body: joi.object().keys({
-            password: passwordSchema.required(),
+            password: joi.string().required(),
             newEmail: joi.string().email().required(),
         })
         .required()

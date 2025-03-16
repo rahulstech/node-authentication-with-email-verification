@@ -34,13 +34,16 @@
  */
 
 const express = require('express')
-const path = require('node:path')
 const { userRoutes } = require('./routes/UserRoutes')
 const passport = require('passport');
 const { installPassportStrategies } = require('./services/AuthenticationService')
-const { ApiError } = require('./utils/errors')
+const { ApiError, AppError } = require('./utils/errors')
+const { logger } = require('./utils/logger');
 
-const server = express()
+const server = express();
+
+// currently don't enforce cors policy and allow all requests form any origin
+server.use(require('cors')());
 
 // initialize passport
 
@@ -55,12 +58,19 @@ server.use(userRoutes);
 // Routes Error Handler
 
 server.use((error,req,res,next) => {
-    console.log(error);
+    logger.error('Server',  error, { "http-method": req.method, "http-path": req.url });
+
     if (error instanceof ApiError) {
-        res.status(error.statusCode).json({ message: error.message });
+        const reason = error.reason;
+        res.status(error.statusCode).json(reason);
     }
     else {
         res.sendStatus(500);
+        if (error instanceof AppError) {
+            if (!error.isOperational) {
+                process.exit(1);
+            }
+        }
     }
 })
 

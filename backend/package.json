@@ -28,6 +28,7 @@
   "dependencies": {
     "@aws-sdk/client-ses": "^3.744.0",
     "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
     "joi": "^17.13.3",
@@ -38,7 +39,8 @@
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "redis": "^4.7.0",
-    "sequelize": "^6.37.5"
+    "sequelize": "^6.37.5",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "sequelize-cli": "^6.6.2"
