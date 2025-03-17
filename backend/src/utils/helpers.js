@@ -58,6 +58,17 @@ function convertValidationError(error, options = null) {
     }
 }
 
+function getGMTNow() {
+    const localNow = new Date();
+    const tzoffset = localNow.getTimezoneOffset();
+    const gmtNow = new Date(localNow.getTime() + tzoffset * 60000);
+    return Math.floor(gmtNow.getTime() / 1000);
+}
+
+function getGMTTimeDifferenceInSeconds(gmtStart, gmtEnd) {
+    return Math.abs(gmtEnd - gmtStart);
+}
+
 module.exports = {
-    hashPassword, verifyPassword, pickOnly, validateValueBySchema, 
+    hashPassword, verifyPassword, pickOnly, validateValueBySchema, getGMTNow, getGMTTimeDifferenceInSeconds,
 }

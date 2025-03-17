@@ -5,9 +5,8 @@ const { postLogin, authenticateEmailPassword, authenticateToken,
         authenticateGoogleLogin, issueNewAccessToken, 
         sendPasswordResetLinkEmail,
         resetPassword, updatePassword } = require('../controllers/AuthenticationController');
-const { registerUser, verifyEmail, 
-        logout, updateEmail, 
-        sendVerificationEmail} = require('../controllers/UserController');
+const { registerUser, verifyEmail, updateEmail, 
+        sendVerificationEmail, logout } = require('../controllers/UserController');
 const { registerUserRule, loginUserRule, verifyEmailRule, updateEmailRule,
         updatePasswordRule, 
         passwordResetLinkRule,
@@ -89,7 +88,7 @@ protectedRoutes.patch('/password/new',
 protectedRoutes.patch('/password/reset', 
     catchErrorAsync(validate(passwordResetRule.schema,passwordResetRule.fields)),
     catchErrorAsync(resetPassword)
-)
+);
 
 protectedRoutes.get('/logout', 
     catchErrorAsync(logout)

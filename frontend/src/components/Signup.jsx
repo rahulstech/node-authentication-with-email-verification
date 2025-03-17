@@ -1,17 +1,37 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../app/AppContext';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 export default function Singup() {
 
-    const { user, signup } = useAppContext();
+    const { userState, signup } = useAppContext();
 
+    const refSignupForm = useRef();
     const refEmail = useRef();
     const refPassword = useRef();
     const refDisplayName = useRef();
+    const navigate = useNavigate();
+
+    useEffect(()=> {
+        // if user logged in the navigate back
+        if (null !== userState.user) {
+            navigate('/profile');
+        }
+    }, [userState.user]);
 
     function handleSubmitSignup(event) {
         event.preventDefault();
+
+        if (!event.target.checkValidity()) {
+            refEmail.current.classList.remove('is-invalid');
+            refEmail.current.classList.remove('is-valid');
+            refPassword.current.classList.remove('is-invalid');
+            refPassword.current.classList.remove('is-valid');
+            refDisplayName.current.classList.remove('is-invalid');
+            refDisplayName.current.classList.remove('is-valid');
+            event.target.classList.add('was-validated');
+            return;
+        }
 
         const email = refEmail.current.value;
         const password = refPassword.current.value;
@@ -20,34 +40,39 @@ export default function Singup() {
         signup({ email, password, displayName });
     }
 
-    let progressBar = "";
-    if (user.loading) {
-        progressBar = (
-            <div className="progress w-75 mx-auto" style={{ height: '5px' }}>
-                <div className="progress-bar progress-bar-striped progress-bar-animated w-100"></div>
-            </div>
-        );
-    }
+    useEffect(() => {
+        refSignupForm.current.classList.remove('was-validated');
+    }, [userState.error]);
 
     return (
         <div className="container-fluid vh-100 d-flex justify-content-center align-items-center">
         <div className="row">
             <div className="col-auto">
                 <div className="card shadow">
-                    { progressBar }
+                    { 
+                        userState.loading &&
+                        <div className="progress w-75 mx-auto" style={{ height: '5px' }}>
+                            <div className="progress-bar progress-bar-striped progress-bar-animated w-100"></div>
+                        </div>
+                    }
                     <div className="card-body">
                         <div className="card-title mb-4">
                             <h4 className="text-center">Sign Up</h4>
                         </div>
-                        <form onSubmit={handleSubmitSignup}>
-                            <fieldset disabled={user.loading}>
+                        <form ref={refSignupForm} onSubmit={handleSubmitSignup}>
+                            <fieldset disabled={userState.loading}>
                                 { /* username */}
                                 <div className="row align-items-center mb-3">
                                     <div className="col-sm-3">
                                         <label id="labelEmail" className="form-label me-3">Email</label>
                                     </div>
                                     <div className="col-sm">
-                                        <input ref={refEmail} aria-labelledby="labelEmail" type="email" className="form-control form-control-lg" required/>
+                                        <input ref={refEmail} aria-labelledby="labelEmail" type="email" 
+                                        className={`form-control form-control-lg ${userState.errors?.email && 'is-invalid'}`} required/>
+                                        {
+                                            userState.errors?.email &&
+                                            <div className="invalid-feedback">{ userState.errors?.email }</div>
+                                        }
                                     </div>
                                 </div>
             
@@ -57,7 +82,12 @@ export default function Singup() {
                                         <label id="labelPassword" className="form-label">Password</label>
                                     </div>
                                     <div className="col-sm">
-                                        <input ref={refPassword} aria-labelledby="lablePassword" type="password" className="form-control form-control-lg" required />
+                                        <input ref={refPassword} aria-labelledby="lablePassword" type="password" 
+                                        className={`form-control form-control-lg ${ userState.errors?.password && 'is-invalid'}`} required />
+                                        {
+                                            userState.errors?.password &&
+                                            <div className="invalid-feedback">{userState.errors?.password}</div>
+                                        }
                                     </div>
                                 </div>
             
@@ -67,7 +97,12 @@ export default function Singup() {
                                         <label id="labelDisplayName" className="form-label">Display Name</label>
                                     </div>
                                     <div className="col-sm">
-                                        <input ref={refDisplayName} aria-labelledby="labelDisplayName" type="text" className="form-control form-control-lg" required />
+                                        <input ref={refDisplayName} aria-labelledby="labelDisplayName" type="text" 
+                                        className={`form-control form-control-lg ${userState.errors?.displayName && 'is-invalid'}`} required />
+                                        {
+                                            userState.errors?.displayName &&
+                                            <div className="invalid-feedback">{userState.errors?.displayName}</div>
+                                        }
                                     </div>
                                 </div>
             

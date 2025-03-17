@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../app/AppContext.jsx';
 import { useEffect } from 'react';
 
@@ -8,6 +8,14 @@ export default function Login() {
     const refEmail = useRef();
     const refPassword = useRef();
     const refLoginForm = useRef();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        // if user logged in navigate to previous route
+        if (userState.user !== null) {
+            navigate(-1);
+        }
+    }, [userState.user]);
 
     function handleSubmitLogin(event) {
         event.preventDefault();
@@ -38,10 +46,6 @@ export default function Login() {
         if (userState.errors.password) refPassword.current.classList.add('is-invalid');
 
     }, [userState.errors]);
-
-    if (!userState.loading) {
-        console.log('user: ', userState.user);
-    }
 
     return (
         <div className="container-fluid vh-100 d-flex align-items-center justify-content-center">

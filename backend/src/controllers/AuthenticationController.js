@@ -1,9 +1,9 @@
 const passport = require('passport');
 const { createToken } = require('../services/AuthenticationService');
-const { saveRefreshToken, getUserById, setPassword, getUserByEmail } = require('../services/UserService');
+const { saveRefreshToken, getUserById, setPassword, getUserByEmail, removeRefreshToken } = require('../services/UserService');
 const { ApiError } = require('../utils/errors');
 const { sendEmail } = require('../services/EmailService');
-const { hashPassword } = require('../utils/helpers');
+const { hashPassword, pickOnly, getGMTTimeDifferenceInSeconds, getGMTNow } = require('../utils/helpers');
 
 function passportAuthenticate(strategy) {
     return (req,res,next) => {
@@ -24,19 +24,21 @@ const authenticateEmailPassword = passportAuthenticate('local');
 const authenticateGoogleLogin = passportAuthenticate('google');
 
 async function postLogin(req,res) {
-    const { id } = req.user;
-    const user = await getUserById(id);
-    const accessToken = await createToken(user, process.env.ACCESS_TOKEN_EXPIRY);
-    const refreshToken = await createToken(user, process.env.REFRESH_TOKEN_EXPIRY);
+    const accessToken = await createToken(req.user, process.env.ACCESS_TOKEN_EXPIRY);
+    const refreshToken = await createToken(req.user, process.env.REFRESH_TOKEN_EXPIRY);
+    const expiresIn = getGMTTimeDifferenceInSeconds(getGMTNow(), refreshToken.expire);
 
-    const saved = await saveRefreshToken(id, refreshToken.token);
+    const saved = await saveRefreshToken(req.user.id, refreshToken.token, expiresIn);
     if (!saved) {
         throw new ApiError(500, 'refresh token not saved');
     }
 
+    const user = await getUserById(req.user.id);
+    const userDetails = pickOnly(user,['id','email','displayName','verified']);
+    
     res.json({ 
         tokens: { "access-token": accessToken, "refresh-token": refreshToken },
-        user,
+        user: userDetails,
     });
 }
 

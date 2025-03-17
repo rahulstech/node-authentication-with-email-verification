@@ -1,18 +1,25 @@
+import { useEffect } from "react";
 import { useAppContext } from "../app/AppContext"
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Home() {
 
     const { userState } = useAppContext();
+    const navigate = useNavigate();
 
-    console.log('userState: ', userState);
-
+    useEffect(() => {
+        // if logged in navigate to /profile route
+        if (null !== userState.user) {
+            navigate('/profile');
+        }
+    }, [userState.user]);
+    
     return (
-        <div>
-            <p>Hello World { userState?.user?.displayName }</p>
-            <a href="/login">Login</a>
-            <br/>
-            <a href="/signup">Signup</a>
-        </div>
-        
+        <nav className="navbar bg-primary-subtle">
+            <div className="container-fluid px-0 d-fx justify-content-end">
+                <Link to="/login" className="btn btn-text mx-2" >Login</Link>
+                <Link to="/signup" className="btn btn-primary mx-2" >Signup</Link>
+            </div>
+        </nav>
     )
 }

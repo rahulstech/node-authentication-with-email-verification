@@ -1,4 +1,4 @@
-const { getUserByEmail, createUser, setEmailVerified, getUserById, setEmail, setPassword, saveRefreshToken } = require('../services/UserService');
+const { getUserByEmail, createUser, setEmailVerified, getUserById, setEmail, setPassword, saveRefreshToken, removeRefreshToken } = require('../services/UserService');
 const { save, get, setHash } = require('../services/CacheService');
 const { sendEmail } = require('../services/EmailService');
 const { ApiError } = require('../utils/errors');
@@ -23,10 +23,10 @@ async function registerUser(req, res) {
     const user = await createUser(values);
 
     // send verification email
-    await sendEmailForEmailVerification(user)
+    await sendEmailForEmailVerification(user);
     
     // redirect to login
-    res.status(201).json({ data: user });
+    res.status(201).json({ user });
 }
 
 async function sendEmailForEmailVerification({ id, email }) {
@@ -34,7 +34,7 @@ async function sendEmailForEmailVerification({ id, email }) {
 
     // cache the verification code for 15 minutes
     // i never need to manually delete this value even after successful email verification
-    // because it's expiration is set so it will be remove automactically
+    // because it's expiration is set, so it will be removed automactically
     // also setting new value before expiration of old value resets the expiration
     // thus i saved an execution just avoiding deletion
     await save(`user:${id}:verify:email`, verificationCode, 900);
@@ -128,14 +128,12 @@ async function updateEmail(req,res) {
 }
 
 async function logout(req, res) {
-    const { id } = req.user
-    if (id) {
-        await saveRefreshToken(id, null);
-    }
+    const { id } = req.user;
+    await removeRefreshToken(id);
 
-    res.status(200).json({ message: 'logged out' })
+    res.sendStatus(204);
 }
 
 module.exports = { 
-    registerUser, verifyEmail, sendVerificationEmail, logout, updateEmail,
+    registerUser, verifyEmail, sendVerificationEmail, updateEmail, logout,
 }

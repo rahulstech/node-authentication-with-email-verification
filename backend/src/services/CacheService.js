@@ -87,7 +87,7 @@ async function getHash(key, fields = []) {
 }
 
 async function remove(key) {
-    await client.del(key)
+    return 1 === await client.del(key)
 }
 
 async function hasKey(key) {

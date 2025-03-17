@@ -76,9 +76,9 @@ async function setUserEmail(id, newEmail, verified = false) {
     await save(email_key, id_key);
 }
 
-async function setUserRefreshToken(id, refreshToken, expiry) {
+async function setUserRefreshToken(id, refreshToken, expirsIn) {
     const key = getUserKey(id, 'refreshToken');
-    await save(key, refreshToken, expiry)
+    return await save(key, refreshToken, expirsIn)
 }
 
 async function getUserRefreshToken(id) {
@@ -92,7 +92,7 @@ async function getUserRefreshToken(id) {
 
 async function removeUserRefreshToken(id) {
     const key = getUserKey(id,'refreshToken');
-    await remove(key);
+    return await remove(key);
 }
 
 module.exports = {

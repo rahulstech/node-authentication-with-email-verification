@@ -1,5 +1,5 @@
 const joi = require('joi');
-const { getCachedUserById, cacheUser, getCachedUserByEmail, setUser, setUserRefreshToken, setUserEmail, getUserRefreshToken } = require('./UserCacheService');
+const { getCachedUserById, cacheUser, getCachedUserByEmail, setUser, setUserRefreshToken, setUserEmail, getUserRefreshToken, removeUserRefreshToken } = require('./UserCacheService');
 const { findUserById, findUserByEmail, updateUser, insertUser } = require('./UserDBService');
 const { validateValueBySchema } = require('../utils/helpers');
 
@@ -67,13 +67,18 @@ async function getUserById(id) {
         await cacheUser(user);
         cached = user;
     }
-    return cached;
+    const converted = await convertUser(cached, 'UserService.getUserById');
+    return converted;
 }
 
-async function saveRefreshToken(userId, refreshToken, expiry) {
-    // save token in cache
-    await setUserRefreshToken(userId, refreshToken, expiry);
-    return true;
+async function saveRefreshToken(userId, refreshToken, expirsIn) {
+    // save refresh token in cache
+    return await setUserRefreshToken(userId, refreshToken, expirsIn); 
+}
+
+async function removeRefreshToken(id) {
+    // remove refresh token from cache
+    await removeUserRefreshToken(id);
 }
 
 async function isRefreshTokenValid(userId, refreshToken) {
@@ -109,5 +114,5 @@ async function setPassword(id, password) {
 
 module.exports = {
     createUser, getUserByEmail, saveRefreshToken, isRefreshTokenValid, getUserById, setEmailVerified,
-    setEmail, setPassword, getRefreshToken, 
+    setEmail, setPassword, getRefreshToken, removeRefreshToken, 
 }
