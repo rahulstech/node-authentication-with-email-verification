@@ -58,7 +58,11 @@ server.use(userRoutes);
 // Routes Error Handler
 
 server.use((error,req,res,next) => {
-    logger.error('Server',  error, { "http-method": req.method, "http-path": req.url });
+    const context = { "http-method": req.method, "http-path": req.url };
+    if (req.user) {
+        context.user_id = req.user.id;
+    }
+    logger.error('Server',  error, context);
 
     if (error instanceof ApiError) {
         const reason = error.reason;

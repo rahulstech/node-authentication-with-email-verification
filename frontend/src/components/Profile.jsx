@@ -1,6 +1,6 @@
 import { Link, Outlet, useNavigate, useSearchParams } from "react-router-dom";
 import { useAppContext } from "../app/AppContext";
-import { useEffect } from "react";
+import { useEffect, useReducer, useState } from "react";
 
 export default function Profile() {
     const { userState, logout } = useAppContext();
@@ -59,23 +59,40 @@ export function UserProfile() {
     )
 }
 
-export function Verifier(){
+export function Verification(){
 
-    const { userState } = useAppContext();
+    const { userState, verifyEmail } = useAppContext();
     const [ searchParams ] = useSearchParams();
 
     useEffect(() => {
-
-        
-
+        if (searchParams) {
+            const token = searchParams.get('token');
+            verifyEmail(token);
+        }
     }, [searchParams]);
 
-    return (
-        <div className="container-fluid d-flex justify-content-center">
-            
-            <div className="alert alert-danger">
-
+    let uiContent = "";
+    if (userState.verification?.email?.loading) {
+        uiContent = (
+            <div className="card m-4">
+                <div className="card-body">
+                    <h4 className="text-center">Verifing Email</h4>
+                    <div className="progress mx-auto">
+                        <div className="progress-bar progress-bar-striped progress-bar-animated w-100"></div>
+                    </div>
+                </div>
             </div>
-        </div>
-    )
+        );
+    }
+    else {
+        if (userState.verification?.email?.errors) {
+            uiContent = <div className="alert alert-danger m-3">{userState.verification?.email?.errors?.description}</div>
+        }
+        else {
+            uiContent = <div className="alert alert-success m-3">Email verified successfully</div>
+        }
+    }
+
+    return <div className="container-fluid d-flex justify-content-center">{uiContent}</div>
+    
 }

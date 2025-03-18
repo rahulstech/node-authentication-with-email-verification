@@ -1,11 +1,10 @@
 const express = require('express');
 const { Router } = express;
 const { catchErrorAsync } = require('../utils/errors');
-const { postLogin, authenticateEmailPassword, authenticateToken, 
+const { loginUser, authenticateEmailPassword, authenticateToken, 
         authenticateGoogleLogin, issueNewAccessToken, 
         sendPasswordResetLinkEmail,
-        resetPassword, updatePassword } = require('../controllers/AuthenticationController');
-const { registerUser, verifyEmail, updateEmail, 
+        resetPassword, updatePassword , registerUser, verifyEmail, updateEmail, 
         sendVerificationEmail, logout } = require('../controllers/UserController');
 const { registerUserRule, loginUserRule, verifyEmailRule, updateEmailRule,
         updatePasswordRule, 
@@ -19,7 +18,7 @@ routes.use(express.json());
 routes.post('/login',
     catchErrorAsync(validate(loginUserRule.schema,loginUserRule.fields)),
     authenticateEmailPassword,
-    catchErrorAsync(postLogin)
+    catchErrorAsync(loginUser)
 );
 
 // this end point is responsible for opening the google authentication page in browser
@@ -36,7 +35,7 @@ routes.get('/login/google', authenticateGoogleLogin)
 // - this end point should be added to OAuth Client Redirect Url value in google console
 routes.get('/google/callback', 
     authenticateGoogleLogin, 
-    catchErrorAsync(postLogin),
+    catchErrorAsync(loginUser),
 );
 
 routes.post('/register', 

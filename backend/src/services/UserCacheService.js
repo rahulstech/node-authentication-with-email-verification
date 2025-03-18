@@ -1,4 +1,4 @@
-const { validateValueBySchema } = require('../utils/helpers');
+const { validateValueBySchema } = require('../../../../../../Desktop/nodejs-portfolio-projects/node-express-auth/backend/src/utils/validation');
 const { getHash, saveHash, save, get, remove } = require('./CacheService');
 const joi = require('joi');
 
@@ -8,9 +8,18 @@ const __schema_to_redis = joi.object( {
     email: joi.string().email(),
     password: joi.string().empty(null).default(''),
     displayName: joi.string(),
-    verified: joi.number().integer(),
+    verified: joi.alternatives().try(
+        joi.number().integer(),
+        joi.boolean().truthy(1).falsy(0).cast('number')
+    ),
 
-}).prefs({ convert: true, allowUnknown: true, stripUnknown: true });
+}).prefs({ convert: true, abortEarly: false, allowUnknown: true, stripUnknown: true });
+
+async function convertUser(values, location = 'convertUser') {
+    const converted = await validateValueBySchema(__schema_to_redis, values, 
+        { description: `UserCacheService.${location}` });
+    return converted;
+}
 
 function getUserKey(...data) {
     return `user:${data.join(':')}`;
@@ -45,18 +54,19 @@ async function cacheUser(user) {
     const email_key = getUserKey(email);
 
     // convert user
-    const cachable = await validateValueBySchema(__schema_to_redis, user, 
-        { description: 'UserCacheService.cacheUser' });
+    const cachable = await convertUser(user, 'cacheUser');
+
+    
     // save the user with user id key
     await saveHash(id_key, cachable);
     // map user email key to user id key 
     await save(email_key, id_key);
+    return cachable;
 }
 
 async function setUser(id, newValues) {
     const id_key = getUserKey(id);
-    const cachable = await validateValueBySchema(__schema_to_redis, newValues,
-         { description: 'setUser', ...VALIDATION_OPTIONS});
+    const cachable = await convertUser(newValues, 'setUser');
     await saveHash(id_key, cachable);
 }
 
@@ -74,6 +84,21 @@ async function setUserEmail(id, newEmail, verified = false) {
     // create new user email-id key-value pair
     const email_key = getUserKey(newEmail);
     await save(email_key, id_key);
+}
+
+async function setCodeForEmailVerification(id, code, expiresIn) {
+    const key = getUserKey(id,'verify','email');
+    // save code in cache
+    return await save(key, code, expiresIn);
+}
+
+async function getCodeForEmailVerification(id) {
+    const key = getUserKey(id,'verify','email');
+    const code = await get(key);
+    if (!code) {
+        return null;
+    }
+    return code;
 }
 
 async function setUserRefreshToken(id, refreshToken, expirsIn) {
@@ -96,6 +121,7 @@ async function removeUserRefreshToken(id) {
 }
 
 module.exports = {
-    getCachedUserById, getCachedUserByEmail, cacheUser, setUser, setUserEmail, 
+    getCachedUserById, getCachedUserByEmail, cacheUser, setUser,
+    setUserEmail, setCodeForEmailVerification, getCodeForEmailVerification,
     setUserRefreshToken, getUserRefreshToken, removeUserRefreshToken,
 }

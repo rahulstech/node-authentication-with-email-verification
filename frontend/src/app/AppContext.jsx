@@ -25,6 +25,14 @@ class TokenStoreImpl extends TokenStore {
     getRefreshToken() {
         return appStorage.getRefreshToken();
     }
+
+    updateAccessToken(token,expire) {
+        appStorage.putAccessToken(token,expire);
+    }
+
+    updateRefreshToken(token,expire){
+        appStorage.putRefreshToken(token,expire);
+    }
 }
 
 export function AppContextProvider({ children }) {
@@ -35,8 +43,14 @@ export function AppContextProvider({ children }) {
     const [userState, setUserState] = useState({
         user: appStorage.getLoggedinUser(), 
         loading: false, 
-        errors: null 
+        errors: null,
     });
+
+    const [userEmailState, setUserEmailState] = userState({
+        emailVerified: false,
+        loading: false,
+        errors: null,
+    })
 
     function login({ email, password }) {
         setUserState(prevState => {
@@ -65,6 +79,7 @@ export function AppContextProvider({ children }) {
             });
         })
         .catch(error => {
+            console.log('login error ', error);
             setUserState(prevState => {
                 const newUserState = { ...prevState, loading: false };
                 return newUserState;
@@ -72,7 +87,7 @@ export function AppContextProvider({ children }) {
         })
     }
 
-    function signup([ email, password, displayName ]) {
+    function signup({ email, password, displayName }) {
         setUserState(prevState => {
             const newUserState = { ...prevState, loading: true };
             return newUserState;
@@ -82,18 +97,27 @@ export function AppContextProvider({ children }) {
             setUserState(prevState => {
                 const newUserState = { ...prevState, loading: false };
                 if (success) {
-                    newUserState.user = data.user;
+                    const user = data.user;
+                    appStorage.putLoggedinUser(user);
+                    newUserState.user = user; 
+                    newUserState.errors = null;
                 }
                 else if (status >= 500) {
                     newUserState.errors = { description: errorReason }
                     newUserState.user = null;
                 }
+                else if (status >= 400) {
+                    newUserState.errors = errors;
+                    newUserState.user = null;
+                }
                 return newUserState;
             })
-            
         })
-        .catch(err => {
-
+        .catch(error => {
+            setUserState(prevState => {
+                const newUserState = { ...prevState, loading: false };
+                return newUserState;
+            });
         })
     }
 
@@ -121,8 +145,68 @@ export function AppContextProvider({ children }) {
         })
     }
 
+    function verifyEmail(token) {
+        setUserState(prevState => {
+            const newState = { 
+                ...prevState,
+                verification: {
+                    ...prevState.verification,
+                    email: {
+                        loading: true,
+                    }
+                }
+            }
+            return newState;
+        });
+
+        
+
+
+        // refUserApi.current.verifyEmail(token)
+        // .then(({ status, errors, errorReason }) => {
+        //     setUserState(prevState => {
+        //         const newState = {
+        //             ...prevState,
+        //             verification: {
+        //                 ...prevState.verification,
+        //                 email: {
+        //                     loading: false,
+        //                 }
+        //             },
+        //         };
+        //         if (status >= 500) {
+        //             newState.verification.email.errors = { description: errorReason }
+        //         }
+        //         else if (status >= 400) {
+        //             newState.verification.email.errors = errors;
+        //         }
+        //         return newState;
+        //     })
+        // })
+        // .catch(error => {
+        //     console.log('verifyEmail error ', error);
+        //     setUserState(prevState => {
+        //         const newState = { 
+        //             ...prevState,
+        //             verification: {
+        //                 ...prevState.verification,
+        //                 email: {
+        //                     loading: false,
+        //                 }
+        //             }
+        //         }
+        //         return newState;
+        //     })
+        // })
+    }
+
+    function resetEmail() {}
+
     return (
-        <AppContext.Provider value={{ userState, signup, login, logout }} >
+        <AppContext.Provider value={{ 
+            userContext: { ...userState, signup, login, logout },
+            userEmailContext: { userEmail: userEmailState, verifyEmail, resetEmail }
+         }} >
             {children}
         </AppContext.Provider>
     )

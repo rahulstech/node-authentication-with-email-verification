@@ -1,5 +1,5 @@
 import axios from "axios";
-import { catchAxiosError } from './ApiUtil';
+import { catchAxiosError, createResult } from './ApiUtil';
 
 export default class UserApi {
 
@@ -23,6 +23,18 @@ export default class UserApi {
         return client;
     }
 
+    verifyEmail(token) {
+        return catchAxiosError(async () => {
+            const client = this.getClient();
+            const res = await client.get('/verify/email', {
+                params: {
+                    token
+                }
+            });
+            return createResult(res);
+        })();
+    }
+
     changeEmail() {}
 
     changePassword() {}
@@ -33,7 +45,7 @@ export default class UserApi {
         return catchAxiosError(async () => {
             const _refreshToken = this.tokenStore.getRefreshToken();
             const res = await this.getClient().post('/refresh', { _refreshToken });
-            const { token, expire } = res.data.accessToken;
+            const { token, expire } = res.data["access-token"];
             this.tokenStore.updateAccessToken(token,expire);  
             return { success: true };
         })();
@@ -42,7 +54,7 @@ export default class UserApi {
     logout() {
         return catchAxiosError(async () => {
             const res = await this.getClient().get('/logout');
-            return { success: true };
+            return createResult(res);
         })()
     }
 }

@@ -99,7 +99,7 @@ const KEY_REFRESH_TOKEN_EXPIRE = 'refresh-token:expire';
 function isAfter(what) {
     const localNow = new Date();
     const tzoffset = localNow.getTimezoneOffset();
-    const gmtNow = Math.floor(localNow.getTime() / 1000 + tzoffset * 600 );
+    const gmtNow = Math.floor(localNow.getTime() / 1000 + tzoffset * 60 );
     return what > gmtNow;
 }
 

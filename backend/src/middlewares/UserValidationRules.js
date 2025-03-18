@@ -32,8 +32,7 @@ const loginUserRule = {
 const verifyEmailRule = {
     schema: {
         query: joi.object().keys({
-            uid: joi.number().integer().required(),
-            code: joi.string().required(),
+            token: joi.string().required(),
         })
         .required()
         .unknown(false),

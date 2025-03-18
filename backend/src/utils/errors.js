@@ -3,30 +3,44 @@ const http = require('node:http');
 const { pickOnly } = require('./helpers');
 
 class AppError extends Error {
+
     constructor(reason, operational = true, stack = '') {
         super();
         this.name = this.constructor.name;
         this.operational = operational;
-        if (typeof reason === 'object') {
+        this.setReason(reason);
+        if (stack) {
+            this.stack = stack;
+        }
+    }
+
+    setReason(reason) {
+        if (!reason) {
+            this.reason = undefined;
+        }
+        else if (typeof reason === 'object') {
             this.reason = pickOnly(reason, ['description', 'details', 'context']);
         }
         else if (typeof reason === 'string') {
             this.reason = { description: reason };
         }
         else {
-            this.reason = { description: http.STATUS_CODES[statusCode] };
-        }
-        if (stack) {
-            this.stack = stack;
+            this.reason = undefined;
         }
     }
 }
 
 class ApiError extends AppError {
     constructor(statusCode,reason = null,operational = true) {
-        super(reason,operational);
+        super(null,operational);
         this.statusCode = statusCode;
         this.stack = '';
+        if (!reason) {
+            this.setReason(http.STATUS_CODES[statusCode]);
+        }
+        else {
+            this.setReason(reason);
+        }
     }
 }
 

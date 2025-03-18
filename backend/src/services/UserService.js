@@ -1,8 +1,12 @@
 const joi = require('joi');
-const { getCachedUserById, cacheUser, getCachedUserByEmail, setUser, setUserRefreshToken, setUserEmail, getUserRefreshToken, removeUserRefreshToken } = require('./UserCacheService');
+const { getCachedUserById, cacheUser, getCachedUserByEmail, setUser, setUserRefreshToken, setUserEmail, 
+    removeUserRefreshToken, setCodeForEmailVerification, getCodeForEmailVerification } = require('./UserCacheService');
 const { findUserById, findUserByEmail, updateUser, insertUser } = require('./UserDBService');
-const { validateValueBySchema } = require('../utils/helpers');
+const { pickOnly } = require('../utils/helpers');
+const { validateValueBySchema } = require('../utils/validation');
 
+
+const CACHEABLE_FILEDS = ['id', 'password', 'email', 'displayName', 'verified'];
 
 const __schema_user = joi.object({
 
@@ -10,25 +14,26 @@ const __schema_user = joi.object({
     email: joi.string().email(),
     password: joi.string().empty([null,'']).default(null),
     displayName: joi.string(),
-    refreshToken: joi.string().empty('').default(null),
+    refreshToken: joi.string().empty([null,'']).default(null),
     verified: joi.number().custom(value => value !== 0),
 
-}).prefs({ convert: true });
+}).prefs({ convert: true, abortEarly: false, allowUnknown: true, stripUnknown: true });
 
 
-async function convertUser(values, description = 'UserService.convertUser') {
-    const converted = await validateValueBySchema(__schema_user, values, { description });
+async function convertUser(values, location = 'convertUser') {
+    const converted = await validateValueBySchema(__schema_user, values, 
+        { description:  `UserService.${location}`});
     return converted;
 }
 
-async function createUser({ email, password, displayName, verified }) {
+async function createUser({ email, password, displayName, verified = false }) {
     // insert user in db 
     const newUser = await insertUser({ email, password, displayName, verified });
     // cache user
-    await cacheUser({ email, password, displayName, verified });
+    const newCachedUser = await cacheUser(pickOnly(newUser, CACHEABLE_FILEDS));
     // convert user
-    const user = await convertUser(newUser, 'UserService.createUser');
-    return user;
+    const converted = await convertUser(newCachedUser, 'createUser');
+    return converted;
 }
 
 async function getUserByEmail(email) {
@@ -44,10 +49,10 @@ async function getUserByEmail(email) {
         }
 
         // if found cache the user
-        await cacheUser(user);
+        await cacheUser(pickOnly(user, CACHEABLE_FILEDS));
         cached = user;
     }
-    const converted = await convertUser(cached, 'UserService.getUserByEmail');
+    const converted = await convertUser(cached, 'getUserByEmail');
     return converted;
 }
 
@@ -64,10 +69,10 @@ async function getUserById(id) {
         }
 
         // if found cache user
-        await cacheUser(user);
+        await cacheUser(pickOnly(user,CACHEABLE_FILEDS));
         cached = user;
     }
-    const converted = await convertUser(cached, 'UserService.getUserById');
+    const converted = await convertUser(cached, 'getUserById');
     return converted;
 }
 
@@ -79,16 +84,6 @@ async function saveRefreshToken(userId, refreshToken, expirsIn) {
 async function removeRefreshToken(id) {
     // remove refresh token from cache
     await removeUserRefreshToken(id);
-}
-
-async function isRefreshTokenValid(userId, refreshToken) {
-    
-}
-
-async function getRefreshToken(id) {
-    // get token from cache
-    const refreshToken = await getUserRefreshToken(id);
-    return refreshToken;
 }
 
 async function setEmailVerified(id, verified) {
@@ -112,7 +107,16 @@ async function setPassword(id, password) {
    await setUser(id,{ password });
 }
 
+async function setEmailVerificationCode(id, code, expiresIn) {
+    return setCodeForEmailVerification(id, code, expiresIn);
+}
+
+async function getEmailVerificationCode(id) {
+    const code = await getCodeForEmailVerification(id);
+    return code;
+}
+
 module.exports = {
-    createUser, getUserByEmail, saveRefreshToken, isRefreshTokenValid, getUserById, setEmailVerified,
-    setEmail, setPassword, getRefreshToken, removeRefreshToken, 
+    createUser, getUserByEmail, saveRefreshToken, getUserById, setEmailVerified,
+    setEmail, setPassword, removeRefreshToken, setEmailVerificationCode, getEmailVerificationCode,
 }

@@ -1,12 +1,10 @@
-const { readFileSync } = require('node:fs');
-const path = require('node:path');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const LocalStrategy = require('passport-local').Strategy;
 const { Strategy: JwtStrategy, ExtractJwt } = require('passport-jwt');
-const jwt = require('jsonwebtoken');
 const { getUserByEmail, createUser } = require('./UserService');
-const { verifyPassword, pickOnly } = require('../utils/helpers');
+const { verifyPassword } = require('../utils/helpers');
 const { ApiError } = require('../utils/errors');
+const { jwtSignAsync, JWT_PUBILIC_KEY } = require('../utils/secret');
 
 // google oauth credentials
 const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;
@@ -83,34 +81,6 @@ function installLocalStrategy(passport) {
     }))
 }
 
-// public key to verify the token
-const JWT_PUBILIC_KEY = readFileSync(path.resolve(__dirname, '../..', process.env.JWT_PUBLIC_KEY));
-
-// private key to sign the token
-const JWT_PRIVATE_KEY = readFileSync(path.resolve(__dirname, '../..', process.env.JWT_PRIVATE_KEY));
-
-// jwt asymmetric algorithm
-const JWT_ALGORITHM = process.env.JWT_ALGORITHM;
-
-
-function jwtSignAsync(payload, secret, options = null) {
-    return new Promise((resolve, reject)=> {
-        jwt.sign(payload, secret, options, (error, token) => {
-            if (error) {
-                reject(error);
-            }
-            else {
-                const { exp } = jwt.decode(token, { json: true, complete: false });
-                const result = { token };
-                if (exp) {
-                    result.expire = exp;
-                }
-                resolve(result);
-            }
-        });
-    });
-}
-
 /**
  * 
  * @param {object} payload 
@@ -122,21 +92,16 @@ function jwtSignAsync(payload, secret, options = null) {
  *                                 '2y': two years
  * @returns {string} generated jwt
  */
-async function createToken(user, expiry = null, notBefore = null) {
+async function createToken(user, expiresIn = null, notBefore = null) {
     const { id } = user;
     const payload = { id };
 
     // prepare options
-    const options = { algorithm: JWT_ALGORITHM };
-    if (typeof expiry === 'string' && expiry !== '') {
-        options.expiresIn = expiry;
-    }
-    if (typeof notBefore === 'string' && notBefore !== '') {
-        options.notBefore = notBefore;
-    }
+    const options = { expiresIn, notBefore };
+    
     
     // generate token and return
-    const result = await jwtSignAsync( payload, JWT_PRIVATE_KEY, options);
+    const result = await jwtSignAsync( payload, options);
     
     return result;
 }
@@ -150,7 +115,7 @@ function installJwtStrategy(passport) {
                 ExtractJwt.fromBodyField('_refreshToken'), // refresh token is send in post request body
                 ExtractJwt.fromUrlQueryParameter('Reset-Token'), // password reset token in query parameter
             ]),
-        secretOrKey: JWT_PRIVATE_KEY,
+        secretOrKey: JWT_PUBILIC_KEY,
         ignoreExpiration: false,
     }, (payload, done) => {
         const { id } = payload;
@@ -164,9 +129,13 @@ function installPassportStrategies(passport) {
     installGoogleOauthStrategy(passport);
     installJwtStrategy(passport);
 
-    passport.serializeUser((user, done) => done(null,user));
+    passport.serializeUser((user, done) => {
+        done(null,user)}
+    );
 
-    passport.deserializeUser((payload,done) => done(null,payload));
+    passport.deserializeUser((payload,done) => {
+        done(null,payload);
+    });
 }
 
 module.exports = {

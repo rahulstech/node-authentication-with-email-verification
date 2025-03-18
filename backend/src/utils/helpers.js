@@ -6,6 +6,7 @@ async function hashPassword(plainPassword) {
 }
 
 async function verifyPassword(plain, hash) {
+    console.log('plain ', plain, ' has ', hash);
     return await bcrypt.compare(plain, hash);
 }
 
@@ -22,42 +23,6 @@ function pickOnly(src, props, dest = {}) {
     return dest;
 }
 
-const DEFAULT_VALIDATION_OPTIONS = { 
-    description: 'validation error', statusCode: 400, type: 'ApiError', isOperational: true 
-};
-
-async function validateValueBySchema(schema, value, options = DEFAULT_VALIDATION_OPTIONS) {
-    try {
-        const result = await schema.validateAsync(value);
-        return result;
-    }
-    catch(error) {
-        if (error.name === 'ValidationError') {
-            throw convertValidationError(error,options);
-        }
-        throw error;
-    }
-}
-
-function convertValidationError(error, options = null) {
-    const details = error.details.map(err => ({
-        explain: err.message,
-        key: err.context.key,
-    }));
-    const isOperational = options?.isOperational || true;
-    const reason = { details };
-    if (options?.description) {
-        reason.description = options?.description;
-    }
-    if (options?.type === 'ApiError') {
-        const statusCode = options?.statusCode || 400;
-        return new ApiError(statusCode, reason, isOperational);
-    }
-    else {
-        return new AppError(reason, isOperational);
-    }
-}
-
 function getGMTNow() {
     const localNow = new Date();
     const tzoffset = localNow.getTimezoneOffset();
@@ -69,6 +34,28 @@ function getGMTTimeDifferenceInSeconds(gmtStart, gmtEnd) {
     return Math.abs(gmtEnd - gmtStart);
 }
 
+function getGMTSecondsDifferenceFromNow(gmtEnd) {
+    return getGMTTimeDifferenceInSeconds(getGMTNow(),gmtEnd);
+}
+
+function formatSeconds(seconds) {
+    const hours = Math.floor(seconds/3600);
+    const mins = Math.floor(seconds/60);
+    const secs = Math.floor(seconds%60);
+
+    let time = "";
+    if (hours > 0) {
+        time += `${hours} hours`;
+    }
+    if (mins > 0) {
+        time += ` ${mins} minutes`;
+    }
+    if (secs > 0) {
+        time += ` ${secs} seconds`;
+    }
+    return time;
+}
+
 module.exports = {
-    hashPassword, verifyPassword, pickOnly, validateValueBySchema, getGMTNow, getGMTTimeDifferenceInSeconds,
+    hashPassword, verifyPassword, pickOnly, getGMTNow, getGMTTimeDifferenceInSeconds, formatSeconds, getGMTSecondsDifferenceFromNow,
 }

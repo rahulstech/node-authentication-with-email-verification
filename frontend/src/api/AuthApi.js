@@ -15,12 +15,18 @@ export default class AuthApi {
         return client;
     }
 
+    __updateTokens(tokens) {
+        const accessToken = tokens['access-token'];
+        const refreshToken = tokens['refresh-token'];
+        this.tokenStore.updateAccessToken(accessToken.token, accessToken.expire);
+        this.tokenStore.updateRefreshToken(refreshToken.token,refreshToken.expire);
+    }
+
     login(email, password) {
         return catchAxiosError(async () => {
             const res = await this.getClient().post('/login', { email, password });
-            const { accessToken, refreshToken } = res.data;
-            this.tokenStore.updateAccessToken(accessToken.token, accessToken.expire);
-            this.tokenStore.updateRefreshToken(refreshToken.token,refreshToken.expire);
+            this.__updateTokens(res.data.tokens);
+            
             return createResult(res);
         })();
     }
@@ -28,6 +34,7 @@ export default class AuthApi {
     register(email, password, displayName) {
         return catchAxiosError(async () => {
             const res = await this.getClient().post('/register', { email, password, displayName });
+            this.__updateTokens(res.data.tokens);
             return createResult(res);
         })();
     }
