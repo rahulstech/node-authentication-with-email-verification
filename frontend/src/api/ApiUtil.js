@@ -7,38 +7,44 @@ export function createResult(axiosResponse) {
 }
 
 export function catchAxiosError(requetHandler) {
-    return (...args) => {
-        return new Promise(async (resolve,reject) => {
+    return new Promise(async (resolve,reject) => {
             try {
-                const result = await requetHandler(...args);
+                const result = await requetHandler();
                 resolve(result);
             }
             catch(error) {
                 if (error.name === 'AxiosError') {
                     // TODO: handle connection refuse 
-                    
-                    const result = { 
-                        status: error.status, 
-                        data: error.response.data 
-                    };
 
-                    if (result.data?.details) {
-                        const errors = result.data.details.reduce( (acc, item) => {
-                            acc[item.key] = item.explain;
-                            return acc;
-                        }, {});
-                        result.errors = error;
+                    const code = error.code;
+                    if (code === 'ERR_NETWORK') {
+                        reject({
+                            description: 'network issue',
+                        })
                     }
-                    if (result.data?.description) {
-                        result.errorReason = result.data.description;
+                    else {
+                        const result = {
+                            status: error.status,
+                            data: error.response.data
+                        }
+    
+                        if (result.data?.details) {
+                            const errors = result.data.details.reduce((acc, item) => {
+                                const { explain, key } = item;
+                                acc[key] = explain;
+                                return acc;
+                            }, {});
+                            result.errors = errors;
+                        }
+                        if (result.data?.description) {
+                            result.errors = { description: result.data?.description, ...(result.errors || {}) };
+                        }
+                        resolve(result);
                     }
-
-                    resolve(result);
                 }
                 else {
                     reject(error);
                 }
             }
         });
-    }
 }

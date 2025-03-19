@@ -53,6 +53,7 @@ function jwtSignAsync(payload, options = null) {
         jwt.sign(payload, JWT_PRIVATE_KEY, validOptions, (error, token) => {
             if (error) {
                 reject(error);
+                return;
             }
             const { exp , iat } = jwt.decode(token, { json: true });
             const result = { token, expire: exp || 0 };

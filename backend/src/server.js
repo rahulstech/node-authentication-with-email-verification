@@ -43,7 +43,10 @@ const { logger } = require('./utils/logger');
 const server = express();
 
 // currently don't enforce cors policy and allow all requests form any origin
-server.use(require('cors')());
+server.use(require('cors')({
+    origin: ['http://localhost:5173'],
+    credentials: true,
+}));
 
 // initialize passport
 

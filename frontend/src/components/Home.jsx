@@ -1,19 +1,13 @@
-import { useEffect } from "react";
 import { useAppContext } from "../app/AppContext"
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 
 export default function Home() {
 
     const { userState } = useAppContext();
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        // if logged in navigate to /profile route
-        if (null !== userState.user) {
-            navigate('/profile');
-        }
-    }, [userState.user]);
     
+    if (null !== userState.user) {
+        return <Navigate to="/profile" replace={true} />
+    }
     return (
         <nav className="navbar bg-primary-subtle">
             <div className="container-fluid px-0 d-fx justify-content-end">

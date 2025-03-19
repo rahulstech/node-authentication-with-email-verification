@@ -55,8 +55,6 @@ async function cacheUser(user) {
 
     // convert user
     const cachable = await convertUser(user, 'cacheUser');
-
-    
     // save the user with user id key
     await saveHash(id_key, cachable);
     // map user email key to user id key 

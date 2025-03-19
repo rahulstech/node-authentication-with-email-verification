@@ -40,9 +40,7 @@ async function prepareLoginReponse(user) {
     }
 
     const userDetails = pickOnly(user,["id", "email", "displayName", "verified"]);
-    if (user.passsword) {
-        userDetails.hasPassword = true;
-    }
+    userDetails.hasPassword = Boolean(user.password);
 
     return { 
             tokens: { "access-token": accessToken, "refresh-token":  refreshToken },
@@ -116,23 +114,25 @@ async function sendPasswordResetLinkEmail(req,res) {
     // get user by email
     const user = await getUserByEmail(email);
     if (user === null) {
-        throw new ApiError(404, "incorrect email");
+        throw new ApiError(404, {
+            details: [{ explain: "incorrect email", key: "email" }],
+        });
     }
 
     // generate very short lived jwt for user
-    const token = createToken(user, process.env.PASSWORD_RESET_TOKEN_EXPIRY, '5s'); 
+    const { token, expire } = await createToken(user, process.env.PASSWORD_RESET_TOKEN_EXPIRY); 
+    const expiresIn = getGMTSecondsDifferenceFromNow(expire);
 
     // send a link to email
-    const url = new URL('/password/reset',`http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`);
+    const url = new URL('',process.env.PASSWORD_RESET_URL);
     url.searchParams.append('Reset-Token',token);
-
     const resetLink = url.href;
-    const subjectText = "Rest Password";
-    const messageText = `You password reset link is below\n${resetLink}\nIf you did not request for password reset don't click the link`;
+    const subjectText = 'Reset Password';
+    const messageText = `You password reset link is below:\n${resetLink}\nThis link will expire in ${formatSeconds(expiresIn)}. If you did not request for password reset don't click the link`;
 
     await sendEmail(email, subjectText, messageText);
 
-    res.json({ message: "password reset link sent"});
+    res.sendStatus(200);
 }
 
 async function resetPassword(req,res) {
@@ -145,7 +145,7 @@ async function resetPassword(req,res) {
     // save hashed password in db
     await setPassword(id, hash);
 
-    res.json({ message: "password reset" });
+    res.sendStatus(200);
 }
 
 async function updatePassword(req,res) {
@@ -158,14 +158,18 @@ async function updatePassword(req,res) {
     // verify current password
     const matched = await verifyPassword(password, user.password);
     if (!matched) {
-        throw new ApiError(401, "incorrect password");
+        throw new ApiError(403, {
+            details: [
+                { explain: "incorrect password", key: "password" }
+            ]
+        });
     }
 
     // if password verified, create new hash password and update in db
     const hash = await hashPassword(newPassword);
     await setPassword(id, hash);
 
-    res.json({ message: "password changes" });
+    res.sendStatus(200);
 }
 
 async function sendEmailForEmailVerification({ id, email, displayName }) {

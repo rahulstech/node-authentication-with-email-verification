@@ -3,8 +3,8 @@ import { catchAxiosError, createResult } from './ApiUtil';
 
 export default class UserApi {
 
-    constructor(tokenStore) {
-        this.tokenStore = tokenStore;
+    constructor(storage) {
+        this.storage = storage;
     }
 
     getClient(options = null) {
@@ -14,8 +14,8 @@ export default class UserApi {
         });
 
         // set Authorization header if access token exists
-        const accessToken = this.tokenStore.getAccessToken();
-        if (accessToken && !this.tokenStore.isAccessTokenExpired()) {
+        const accessToken = this.storage.getAccessToken();
+        if (accessToken && !this.storage.isAccessTokenExpired()) {
             client.defaults.headers.common['Authorization'] = `bearer ${accessToken}`;
             client.defaults.withCredentials = true;
         }
@@ -31,30 +31,71 @@ export default class UserApi {
                     token
                 }
             });
+            if (res.status === 200) {
+                this.storage.updateLoggedinUser({ verified: true });
+            }
             return createResult(res);
-        })();
+        });
     }
 
     changeEmail() {}
 
-    changePassword() {}
+    async changePassword(newPassword, currentPassword) {
+        await  this._refreshAccessTokenIfNeeded();
 
-    resetPassword() {}
-
-    issueNewAccessToken() {
         return catchAxiosError(async () => {
-            const _refreshToken = this.tokenStore.getRefreshToken();
-            const res = await this.getClient().post('/refresh', { _refreshToken });
-            const { token, expire } = res.data["access-token"];
-            this.tokenStore.updateAccessToken(token,expire);  
-            return { success: true };
-        })();
+            const client = this.getClient();
+            const res = await client.patch('/password/new', {
+                password: currentPassword,
+                newPassword,
+             });
+             return createResult(res);
+        });
     }
 
-    logout() {
-        return catchAxiosError(async () => {
+    async _refreshAccessTokenIfNeeded() {
+        if (!this.storage.isAccessTokenExpired()) {
+            return;
+        }
+        const { success, errors } = await catchAxiosError(async () => {
+            const _refreshToken = this.storage.getRefreshToken();
+            const res = await this.getClient().post('/refresh', { _refreshToken });
+            const { token, expire } = res.data["access-token"];
+            this.storage.putAccessToken(token,expire);  
+            return createResult(res);
+        });
+
+        if (!success) {
+            throw { errors: { description: "session expired" } };
+        }
+    }
+
+    async logout() {
+        await this._refreshAccessTokenIfNeeded();
+
+        return await catchAxiosError(async () => {
             const res = await this.getClient().get('/logout');
             return createResult(res);
-        })()
+        });
+    }
+
+    requestPasswordResetLink(email) {
+        return catchAxiosError(async ()=>{
+            const client = this.getClient();
+            const res = await client.post('/password/reset/link', { email });
+            return createResult(res);
+        })
+    }
+
+    resetPassword(token, newPassword) {
+        return catchAxiosError(async () => {
+            const client = this.getClient();
+            const res = await client.patch('/password/reset', { password: newPassword }, {
+                params: {
+                    'Reset-Token': token,
+                }
+            });
+            return createResult(res);
+        });
     }
 }

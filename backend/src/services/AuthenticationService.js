@@ -99,7 +99,6 @@ async function createToken(user, expiresIn = null, notBefore = null) {
     // prepare options
     const options = { expiresIn, notBefore };
     
-    
     // generate token and return
     const result = await jwtSignAsync( payload, options);
     

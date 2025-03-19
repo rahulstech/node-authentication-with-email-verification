@@ -97,9 +97,7 @@ const KEY_REFRESH_TOKEN_TOKE = 'refresh-token:token';
 const KEY_REFRESH_TOKEN_EXPIRE = 'refresh-token:expire';
 
 function isAfter(what) {
-    const localNow = new Date();
-    const tzoffset = localNow.getTimezoneOffset();
-    const gmtNow = Math.floor(localNow.getTime() / 1000 + tzoffset * 60 );
+    const gmtNow = Math.floor(Date.now()/1000);
     return what > gmtNow;
 }
 
@@ -121,7 +119,7 @@ class AppStorage {
 
     isAccessTokenExpired() {
         const expire = this.storage.getAsNumber(KEY_ACCESS_TOKEN_EXPIRE);
-        return isAfter(expire);
+        return !isAfter(expire);
     }
 
     removeAccessToken() {
@@ -141,7 +139,7 @@ class AppStorage {
 
     isRefreshTokenExpired() {
         const expire = this.storage.getAsNumber(KEY_REFRESH_TOKEN_EXPIRE);
-        return isAfter(expire);
+        return !isAfter(expire);
     }
 
     removeRefreshToken() {
@@ -156,6 +154,14 @@ class AppStorage {
     getLoggedinUser() {
         const user = this.storage.getAsObject('user:loggedin');
         return user;
+    }
+
+    updateLoggedinUser(newData) {
+        const user = this.getLoggedinUser();
+        if (user && newData) {
+            const updatedUser = { ...user, ...newData };
+            this.putLoggedinUser(updatedUser);
+        }
     }
 
     removeLoggedinUser() {

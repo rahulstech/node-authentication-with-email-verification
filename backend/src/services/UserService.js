@@ -69,8 +69,7 @@ async function getUserById(id) {
         }
 
         // if found cache user
-        await cacheUser(pickOnly(user,CACHEABLE_FILEDS));
-        cached = user;
+        cached = await cacheUser(pickOnly(user,CACHEABLE_FILEDS));
     }
     const converted = await convertUser(cached, 'getUserById');
     return converted;

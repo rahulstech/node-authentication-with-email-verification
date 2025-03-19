@@ -86,7 +86,6 @@ const passwordResetRule = {
         .required(),
         body: joi.object().keys({
             password: passwordSchema.required(),
-            confirmPassword: passwordSchema.required(),
         })
         .required()
         .unknown(false),

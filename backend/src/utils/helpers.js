@@ -6,7 +6,6 @@ async function hashPassword(plainPassword) {
 }
 
 async function verifyPassword(plain, hash) {
-    console.log('plain ', plain, ' has ', hash);
     return await bcrypt.compare(plain, hash);
 }
 
@@ -23,19 +22,9 @@ function pickOnly(src, props, dest = {}) {
     return dest;
 }
 
-function getGMTNow() {
-    const localNow = new Date();
-    const tzoffset = localNow.getTimezoneOffset();
-    const gmtNow = new Date(localNow.getTime() + tzoffset * 60000);
-    return Math.floor(gmtNow.getTime() / 1000);
-}
-
-function getGMTTimeDifferenceInSeconds(gmtStart, gmtEnd) {
-    return Math.abs(gmtEnd - gmtStart);
-}
-
 function getGMTSecondsDifferenceFromNow(gmtEnd) {
-    return getGMTTimeDifferenceInSeconds(getGMTNow(),gmtEnd);
+    const gmtNow = Math.floor(Date.now() / 1000);
+    return Math.abs(gmtNow - gmtEnd);
 }
 
 function formatSeconds(seconds) {
@@ -57,5 +46,5 @@ function formatSeconds(seconds) {
 }
 
 module.exports = {
-    hashPassword, verifyPassword, pickOnly, getGMTNow, getGMTTimeDifferenceInSeconds, formatSeconds, getGMTSecondsDifferenceFromNow,
+    hashPassword, verifyPassword, pickOnly, formatSeconds, getGMTSecondsDifferenceFromNow,
 }

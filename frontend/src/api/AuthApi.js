@@ -1,10 +1,11 @@
 import axios from 'axios';
 import { catchAxiosError, createResult } from './ApiUtil';
 
+
 export default class AuthApi {
 
-    constructor(tokenStore) {
-        this.tokenStore = tokenStore;
+    constructor(storage) {
+        this.storage = storage;
     }
 
     getClient() {
@@ -18,24 +19,25 @@ export default class AuthApi {
     __updateTokens(tokens) {
         const accessToken = tokens['access-token'];
         const refreshToken = tokens['refresh-token'];
-        this.tokenStore.updateAccessToken(accessToken.token, accessToken.expire);
-        this.tokenStore.updateRefreshToken(refreshToken.token,refreshToken.expire);
+        this.storage.putAccessToken(accessToken.token, accessToken.expire);
+        this.storage.putRefreshToken(refreshToken.token,refreshToken.expire);
     }
 
     login(email, password) {
         return catchAxiosError(async () => {
             const res = await this.getClient().post('/login', { email, password });
             this.__updateTokens(res.data.tokens);
-            
+            this.storage.putLoggedinUser(res.data.user);
             return createResult(res);
-        })();
+        });
     }
 
     register(email, password, displayName) {
         return catchAxiosError(async () => {
             const res = await this.getClient().post('/register', { email, password, displayName });
             this.__updateTokens(res.data.tokens);
+            this.storage.putLoggedinUser(res.data.user);
             return createResult(res);
-        })();
+        });
     }
 }

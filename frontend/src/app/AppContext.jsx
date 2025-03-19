@@ -1,10 +1,9 @@
-import { useContext, useState } from "react";
+import { useCallback, useContext, useMemo, useState } from "react";
 import { createContext } from "react";
 import AuthApi from '../api/AuthApi';
 import UserApi from '../api/UserApi';
 import { appStorage } from "../api/Storage";
 import { useRef } from "react";
-import TokenStore from "../api/TokenStore";
 
 export const AppContext = createContext();
 
@@ -12,33 +11,17 @@ export function useAppContext() {
     return useContext(AppContext);
 }
 
-class TokenStoreImpl extends TokenStore {
-
-    getAccessToken() {
-        return appStorage.getAccessToken();
-    }
-
-    isAccessTokenExpired() {
-        return appStorage.isAccessTokenExpired();
-    }
-
-    getRefreshToken() {
-        return appStorage.getRefreshToken();
-    }
-
-    updateAccessToken(token,expire) {
-        appStorage.putAccessToken(token,expire);
-    }
-
-    updateRefreshToken(token,expire){
-        appStorage.putRefreshToken(token,expire);
-    }
-}
+export const LoadingStatus = {
+    INIT: 'INIT',
+    RUNNING: 'RUNNING',
+    SUCCESSFUL: 'SUCCESSFUL',
+    FAILED: 'FAILED',
+};
 
 export function AppContextProvider({ children }) {
 
-    const refAuthApi = useRef(new AuthApi(new TokenStoreImpl()));
-    const refUserApi = useRef(new UserApi(new TokenStoreImpl()));
+    const refAuthApi = useRef(new AuthApi(appStorage));
+    const refUserApi = useRef(new UserApi(appStorage));
 
     const [userState, setUserState] = useState({
         user: appStorage.getLoggedinUser(), 
@@ -46,78 +29,48 @@ export function AppContextProvider({ children }) {
         errors: null,
     });
 
-    const [userEmailState, setUserEmailState] = userState({
-        emailVerified: false,
-        loading: false,
-        errors: null,
-    })
+    const [loadingState, setLoadingState] = useState({});
+
+    const updateUserState = (loading, errors = null, user = undefined) => {
+        setUserState(prevState => {
+            const newState = { ...prevState, loading, errors };
+            if (user !== undefined) {
+                newState.user = user;
+            }
+            return newState;
+        });
+    };
+
+    const updateLoadingState = (status, errors = null) => {
+        setLoadingState(prevState => {
+            const newState = { errors };
+            newState.completed = status === LoadingStatus.FAILED || status === LoadingStatus.SUCCESSFUL;
+            newState.failed = status === LoadingStatus.FAILED;
+            return newState;
+        })
+    }
 
     function login({ email, password }) {
-        setUserState(prevState => {
-            const newUserState = { ...prevState, loading: true };
-            return newUserState;
-        });
+        updateUserState(true);
         refAuthApi.current.login(email, password)
-        .then(({ success, status, data, errors, errorReason }) => {
-            setUserState(prevState => {
-                const newUserState = { ...prevState, loading: false };
-                if (success) {
-                    const user = data.user;
-                    appStorage.putLoggedinUser(user);
-                    newUserState.user = user; 
-                    newUserState.errors = null;
-                }
-                else if (status === 400 || status === 401) {
-                    newUserState.errors = errors;
-                    newUserState.user = null;
-                }
-                else {
-                    newUserState.errors = { description: errorReason }
-                    newUserState.user = null;
-                }
-                return newUserState;
-            });
+        .then(({ success, data, errors }) => {
+            const user = success ? data.user : null;
+            updateUserState(false, errors, user);
         })
         .catch(error => {
-            console.log('login error ', error);
-            setUserState(prevState => {
-                const newUserState = { ...prevState, loading: false };
-                return newUserState;
-            });
+            updateUserState(false, {}, null);
         })
     }
 
     function signup({ email, password, displayName }) {
-        setUserState(prevState => {
-            const newUserState = { ...prevState, loading: true };
-            return newUserState;
-        });
+        updateUserState(true);
         refAuthApi.current.register(email, password, displayName)
-        .then(({ success, status, data, errors, errorReason }) => {
-            setUserState(prevState => {
-                const newUserState = { ...prevState, loading: false };
-                if (success) {
-                    const user = data.user;
-                    appStorage.putLoggedinUser(user);
-                    newUserState.user = user; 
-                    newUserState.errors = null;
-                }
-                else if (status >= 500) {
-                    newUserState.errors = { description: errorReason }
-                    newUserState.user = null;
-                }
-                else if (status >= 400) {
-                    newUserState.errors = errors;
-                    newUserState.user = null;
-                }
-                return newUserState;
-            })
+        .then(({ success, data, errors }) => {
+            const user = success ? data.user : null;
+            updateUserState(false, errors, user);
         })
         .catch(error => {
-            setUserState(prevState => {
-                const newUserState = { ...prevState, loading: false };
-                return newUserState;
-            });
+            updateUserState(false,{},null);
         })
     }
 
@@ -146,67 +99,59 @@ export function AppContextProvider({ children }) {
     }
 
     function verifyEmail(token) {
-        setUserState(prevState => {
-            const newState = { 
-                ...prevState,
-                verification: {
-                    ...prevState.verification,
-                    email: {
-                        loading: true,
-                    }
-                }
-            }
-            return newState;
-        });
-
-        
-
-
-        // refUserApi.current.verifyEmail(token)
-        // .then(({ status, errors, errorReason }) => {
-        //     setUserState(prevState => {
-        //         const newState = {
-        //             ...prevState,
-        //             verification: {
-        //                 ...prevState.verification,
-        //                 email: {
-        //                     loading: false,
-        //                 }
-        //             },
-        //         };
-        //         if (status >= 500) {
-        //             newState.verification.email.errors = { description: errorReason }
-        //         }
-        //         else if (status >= 400) {
-        //             newState.verification.email.errors = errors;
-        //         }
-        //         return newState;
-        //     })
-        // })
-        // .catch(error => {
-        //     console.log('verifyEmail error ', error);
-        //     setUserState(prevState => {
-        //         const newState = { 
-        //             ...prevState,
-        //             verification: {
-        //                 ...prevState.verification,
-        //                 email: {
-        //                     loading: false,
-        //                 }
-        //             }
-        //         }
-        //         return newState;
-        //     })
-        // })
+        updateUserState(true);
+        refUserApi.current.verifyEmail(token)
+        .then(({ status, errors }) => {
+            updateUserState(false,errors);
+        })
+        .catch(error => {
+            console.log('verifyEmail error ', error);
+            updateUserState(false, { description: 'some error occurred' });
+        })
     }
 
-    function resetEmail() {}
+    function changeEmail(email, password) {}
+
+    function changePassword(newPassword, currentPassword) {
+        updateUserState(true);
+        refUserApi.current.changePassword(newPassword, currentPassword)
+        .then(({ errors, }) => {
+            updateUserState(false, errors);
+        })
+        .catch(error => {
+            updateUserState(false, { description: '' });
+        })
+    }
+
+    function sendPasswordResetLink(email) {
+        updateLoadingState(LoadingStatus.INIT)
+        refUserApi.current.requestPasswordResetLink(email)
+        .then(({success,errors}) => {
+            updateLoadingState(success ? LoadingStatus.SUCCESSFUL : LoadingStatus.FAILED, errors);
+        })
+        .catch(error => {
+            updateLoadingState(LoadingStatus.FAILED, {});
+        })
+    }
+
+    function resetPassword(token, newPassword) {
+        refUserApi.current.resetPassword(token,newPassword)
+        .then(({success}) => {
+
+        })
+        .catch(error => {
+
+        })
+    }
+
+
+    const contextValue = useMemo(() => ({
+        userState, loadingState, 
+        signup, login, logout , verifyEmail, changeEmail, changePassword, sendPasswordResetLink, resetPassword,
+    }), [userState,loadingState])
 
     return (
-        <AppContext.Provider value={{ 
-            userContext: { ...userState, signup, login, logout },
-            userEmailContext: { userEmail: userEmailState, verifyEmail, resetEmail }
-         }} >
+        <AppContext.Provider value={contextValue} >
             {children}
         </AppContext.Provider>
     )
